@@ -1,6 +1,7 @@
 class GraphEditor {
-  constructor(canvas, graph) {
-    this.canvas = canvas;
+  constructor(viewport, graph) {
+    this.viewport = viewport;
+    this.canvas = viewport.canvas;
     this.graph = graph;
 
     this.ctx = this.canvas.getContext("2d");
@@ -47,8 +48,12 @@ class GraphEditor {
   }
 
   #handleMouseMove(e) {
-    this.mouse = new Point(e.offsetX, e.offsetY);
-    this.hovered = getNearestPoint(this.mouse, this.graph.points, 10);
+    this.mouse = this.viewport.getMouse(e, true);
+    this.hovered = getNearestPoint(
+      this.mouse,
+      this.graph.points,
+      10 * this.viewport.zoom
+    );
 
     if (this.dragging) {
       this.selected.x = this.mouse.x;
@@ -65,6 +70,12 @@ class GraphEditor {
 
   #removePoint(point) {
     this.graph.removePoint(point);
+    this.selected = null;
+    this.hovered = null;
+  }
+
+  dispose() {
+    this.graph.dispose();
     this.selected = null;
     this.hovered = null;
   }
