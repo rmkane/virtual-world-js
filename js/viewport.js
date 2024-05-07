@@ -40,35 +40,48 @@ class Viewport {
   }
 
   #addEventListeners() {
-    this.canvas.addEventListener("mousewheel", this.#handleWheel.bind(this));
-    this.canvas.addEventListener("mousedown", this.#handleMouseDown.bind(this));
-    this.canvas.addEventListener("mousemove", this.#handleMouseMove.bind(this));
-    this.canvas.addEventListener("mouseup", this.#handleMouseUp.bind(this));
+    // Zoom
+    this.canvas.addEventListener("mousewheel", this.#onWheel.bind(this));
+
+    // Pan (Middle-click)
+    this.canvas.addEventListener("mousedown", this.#onMouseDown.bind(this));
+    this.canvas.addEventListener("mousemove", this.#onMouseMove.bind(this));
+    this.canvas.addEventListener("mouseup", this.#onMouseUp.bind(this));
+
+    // Ensures panning stops if mouse leaves canvas
+    this.canvas.addEventListener("mouseleave", this.#onMouseUp.bind(this));
   }
 
-  #handleWheel(e) {
-    const dir = Math.sign(e.deltaY);
-    const step = 0.1;
-    this.zoom += dir * step;
-    this.zoom = Math.max(1, Math.min(5, this.zoom));
-  }
-
-  #handleMouseDown(e) {
-    // Middle-click
-    if (e.button === 1) {
-      this.drag.start = this.getMouse(e);
-      this.drag.active = true;
+  #onWheel(e) {
+    if (!e.ctrlKey) {
+      // Only zoom if Ctrl is NOT pressed, else it interferes with panning
+      const dir = Math.sign(e.deltaY);
+      const step = 0.1;
+      this.zoom += dir * step;
+      this.zoom = Math.max(1, Math.min(5, this.zoom));
+      e.preventDefault();
     }
   }
 
-  #handleMouseMove(e) {
+  #onMouseDown(e) {
+    if (e.ctrlKey && e.button === 0) {
+      // Check if Ctrl is pressed and left-click
+      this.drag.start = this.getMouse(e);
+      this.drag.active = true;
+      this.canvas.style.cursor = "grabbing";
+      e.preventDefault();
+    }
+  }
+
+  #onMouseMove(e) {
     if (this.drag.active) {
       this.drag.end = this.getMouse(e);
       this.drag.offset = subtract(this.drag.end, this.drag.start);
+      e.preventDefault(); // Optional: Prevent default behavior while panning
     }
   }
 
-  #handleMouseUp(e) {
+  #onMouseUp(e) {
     if (this.drag.active) {
       this.offset = add(this.offset, this.drag.offset);
       this.drag = {
@@ -77,6 +90,7 @@ class Viewport {
         offset: new Point(0, 0),
         active: false,
       };
+      this.canvas.style.cursor = "default";
     }
   }
 }

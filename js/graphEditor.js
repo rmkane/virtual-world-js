@@ -26,6 +26,9 @@ class GraphEditor {
   }
 
   #handleMouseDown(e) {
+    // Panning with a touchpad
+    if (e.ctrlKey) return;
+
     // Right-click
     if (e.button === 2) {
       if (this.selected) {
