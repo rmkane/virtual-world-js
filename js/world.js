@@ -1,12 +1,12 @@
 class World {
   constructor(
     graph,
-    roadWidth = 40,
+    roadWidth = 60,
     roadRoundness = 10,
     buildingWidth = 150,
     buildingMinLength = 150,
     spacing = 50,
-    treeSize = 60
+    treeSize = 120
   ) {
     this.graph = graph;
     this.roadWidth = roadWidth;
@@ -43,7 +43,7 @@ class World {
   #generateTrees() {
     const points = [
       ...this.roadBorders.flatMap((segment) => [segment.p1, segment.p2]),
-      ...this.buildings.flatMap((building) => building.points),
+      ...this.buildings.flatMap((building) => building.base.points),
     ];
     const left = Math.min(...points.map((p) => p.x));
     const right = Math.max(...points.map((p) => p.x));
@@ -51,7 +51,7 @@ class World {
     const bottom = Math.max(...points.map((p) => p.y));
 
     const illegalPolys = [
-      ...this.buildings,
+      ...this.buildings.map((building) => building.base),
       ...this.envelopes.map((e) => e.poly),
     ];
 
@@ -78,7 +78,7 @@ class World {
       // Check if tree is too close to another tree
       if (keep) {
         for (const tree of trees) {
-          if (distance(tree, p) < this.treeSize) {
+          if (distance(tree.center, p) < this.treeSize) {
             keep = false;
             break;
           }
@@ -98,7 +98,7 @@ class World {
       }
 
       if (keep) {
-        trees.push(p);
+        trees.push(new Tree(p, this.treeSize));
         tryCount = 0;
       }
       tryCount++;
@@ -167,10 +167,10 @@ class World {
       }
     }
 
-    return bases;
+    return bases.map((base) => new Building(base));
   }
 
-  draw(ctx) {
+  draw(ctx, viewPoint) {
     this.envelopes.forEach((envelope) =>
       envelope.draw(ctx, { fill: "#bbb", stroke: "#bbb", lineWidth: 15 })
     );
@@ -180,10 +180,15 @@ class World {
     this.roadBorders.forEach((segment) =>
       segment.draw(ctx, { color: "white", width: 4 })
     );
-    this.trees.forEach((tree) => {
-      tree.draw(ctx, { size: this.treeSize, color: "rgba(0, 0, 0, 0.5)" });
+
+    const items = [...this.buildings, ...this.trees];
+    items.sort(
+      (a, b) =>
+        b.base.distanceToPoint(viewPoint) - a.base.distanceToPoint(viewPoint)
+    );
+    items.forEach((item) => {
+      item.draw(ctx, viewPoint);
     });
-    this.buildings.forEach((building) => building.draw(ctx));
   }
 
   dispose() {
