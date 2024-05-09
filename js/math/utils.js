@@ -92,3 +92,10 @@ function randomInt(min, max) {
 function getRandomColor() {
   return `hsl(${randomInt(290, 550)}, 100%, 50%)`;
 }
+
+function getFake3dPoint(point, viewPoint, height) {
+  const dir = normalize(subtract(point, viewPoint));
+  const dist = distance(point, viewPoint);
+  const scalar = Math.atan(dist / 300) / (Math.PI / 2);
+  return add(point, scale(dir, height * scalar));
+}
